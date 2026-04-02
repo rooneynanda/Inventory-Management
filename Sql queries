@@ -1,0 +1,63 @@
+-- Current Stock
+select product_id,
+   sum(stock_in - stock_out) as current_stock
+from stock_transactions
+group by product_id
+
+
+--Demand and Supply mismatch
+select  s.product_id,
+ sum(s.quantity_sold) as total_sales,
+ sum(stock_in - stock_out) as current_stock
+from sales_data s
+join stock_transactions st
+ on s.product_id = st.product_id
+ group by s.product_id
+order by total_sales desc,current_stock asc
+
+
+--Inventory turnover
+SELECT 
+    s.product_id,
+    SUM(s.quantity_sold) * 1.0 /
+    NULLIF(SUM(t.stock_in - t.stock_out),0) AS turnover
+FROM sales_data s
+JOIN stock_transactions t USING(product_id)
+GROUP BY s.product_id;   
+
+--Warehouse efficiency
+select	
+    warehouse,
+    SUM(stock_in) AS total_in,
+    SUM(stock_out) AS total_out
+FROM stock_transactions
+GROUP BY warehouse;
+
+--Supplier Risk Analysis
+SELECT 
+    supplier,
+    AVG(lead_time_days) AS avg_lead_time,
+    AVG(reliability_score) AS reliability
+FROM supplier_data
+GROUP BY supplier;
+
+
+--Monthly revenue trend
+select 
+  DATE_TRUNC('month',date) as month,
+  sum(quantity_sold) as sales,
+  lag(sum(quantity_sold)) over(order by DATE_TRUNC('month',date)) as prev_sales
+from sales_data
+group by month
+
+
+--High Demand, Low Stock
+select sum(quantity_sold) as demand,
+               s.product_id,
+        sum(st.stock_in - st.stock_out) as stock
+from sales_data s
+join  stock_transactions as st
+on st.product_id = s.product_id
+group by s.product_id
+having sum(quantity_sold) > sum(stock_in - stock_out)
+
